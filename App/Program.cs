@@ -1,29 +1,12 @@
-﻿// See https://aka.ms/new-console-template for more information
-using App.DataAccessLayer;
-using App.Distributors;
-using Microsoft.EntityFrameworkCore;
-using Models;
+﻿// BEFORE RUNNING
+// Create a local database and update the connection string in AcmeContext.cs
+// Run 'Update-Database' in the package manager console
 
-Dictionary<string, IDistributor> distributors = new Dictionary<string, IDistributor>()
-{
-    {"RogerMail", new RogerMail() }
-};
+// To run on a regular basis, run this console app in a cron job
+// (e.g. "001**" will run at midnight on the first day of each month)
 
+using App;
 
-using (AcmeContext db = new AcmeContext())
-{
-    List<Subscription> allSubscriptions = await db.Subscriptions.Include("Address").ToListAsync();
+SubscriptionManager manager = new SubscriptionManager();
 
-    foreach (Subscription subscription in allSubscriptions)
-    {
-        int subCountryId = subscription.Address.CountryId;
-
-        // Get the list of distributors which can print this publication in this country
-        List<Distribution> availableDistributors = await db.Distributions.Where(d => d.CountryId == subCountryId && d.PublicationId == subscription.PublicationId)
-                .GroupBy(sub => sub.CompanyId)
-                .Select(group => group.First())
-                .ToListAsync();
-
-        Console.WriteLine(availableDistributors.ToString());
-    }
-}
+await manager.RequestDistribution();
